@@ -1,0 +1,59 @@
+************************************************************
+;; Gareth Sharpe (20337731)
+;; CS 135 Winter 2016
+;; Assignment 04, Question 2
+************************************************************
+
+;; A BridgeHand is one of:
+;; * empty
+;; * (cons bhe BridgeHand), where bhe is a BridgeHandElement
+
+;; A BridgeHandElement is one of:
+;; * a Str
+;; * a Sym, one of ’Ace, ’King, ’Queen, or ’Jack
+;; * a Nat in the range 2 to 10 inclusive
+
+;; Template:
+;; my-bridge-fn: BridgeHand -> Any
+(define (my-bridge-fn BridgeHand)
+  (cond
+    [(empty? BridgeHand) ...]
+    [(... (first BridgeHand) ...)
+               (... (my-bridge-fn (rest BridgeHand)))]
+    [else (my-bridge-fn (rest BridgeHand))]))
+
+;; (count-points BridgeHand) consumes a BridgeHand and produces the number
+;;    of points your hand is worth based on the values and symbols of
+;;    each BridgeHandElement within BridgeHand.
+;; count-points: BridgeHand -> Num 
+
+;; Examples:
+(check-expect (count-points (cons "Clubs Start" (cons 8 (cons 'King (cons 'Ace (cons "Clubs End"
+(cons "Hearts Start" (cons 4 (cons "Hearts End"
+(cons "Diamonds Start" (cons 4 (cons 'Jack (cons "Diamonds End" empty))))))))))))) 8)
+
+(check-expect (count-points empty) 0)
+
+(define (count-points BridgeHand)
+  (cond
+    [(empty? BridgeHand) 0]
+    [(equal? (first BridgeHand) 'Ace) (+ 4 (count-points (rest BridgeHand)))]
+    [(equal? (first BridgeHand) 'King) (+ 3 (count-points (rest BridgeHand)))]
+    [(equal? (first BridgeHand) 'Queen) (+ 2 (count-points (rest BridgeHand)))]
+    [(equal? (first BridgeHand) 'Jack) (+ 1 (count-points (rest BridgeHand)))]
+    [else (count-points (rest BridgeHand))]))
+
+;; Tests:
+(check-expect (count-points
+(cons "Spades Start" (cons 'Queen (cons 5 (cons 'Ace (cons "Spades End"
+(cons "Clubs Start" (cons 'Jack (cons 5 (cons 'Ace (cons "Clubs End"
+(cons "Hearts Start" (cons 4 (cons "Hearts End"
+(cons "Diamonds Start" (cons 4 (cons 7 (cons "Diamonds End" empty)))))))))))))))))) 11)
+
+(check-expect (count-points
+(cons "Clubs Start" (cons 'Jack (cons 5 (cons 4 (cons 2 (cons 'Ace (cons "Clubs End"
+(cons "Diamonds Start" (cons 4 (cons 7 (cons "Diamonds End" empty)))))))))))) 5)
+
+(check-expect (count-points
+(cons "Clubs Start" (cons 'Jack (cons 'Queen (cons 'King (cons 'Ace (cons "Clubs End"
+(cons "Diamonds Start" (cons 4 (cons "Diamonds End" empty)))))))))) 10)
