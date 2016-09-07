@@ -4,68 +4,71 @@
 ;; Assignment 03, Question 3
 ;; ***************************************************
 
-;; A 3dPosn is a (make-3dposn Num Num Num)
+;; A 3dPosn is a (make-3Posn Num Num Num)
 
-(define-struct 3dPosn (x y z))
+(define-struct 3dposn (x y z))
 
-;; (define (area-triangle a b c)) returns the area of
-;; a 3 dimensional triangle where a, b, and c represent
-;; the side lengths of the triangle. Returns 'undefined
-;; if coordiantes do not produce a triangle.
-
-;; area-triangle 3dPosn 3dPosn 3dPosn -> (anof Num 'undefined)
+;; (define (the-length first-3dposn second-3dposn)) consumes
+;;  two positions in 3d space and retures their length.
+;; (the-length) : 3dPosn 3dPosn -> Num
 
 ;; Examples:
-(check-within (area-triangle (make-3dPosn -5 5 -5) (make-3dPosn 1 -6 6) (make-3dPosn 2 -3 4)) 19.306 001)
-(check-expect (area-triangle (make-3dPosn 1 2 3) (make-3dPosn 4 5 6) (make-3dPosn 7 8 9)) 'undefined)
+(check-within (the-length (make-3dposn -5 5 -5) (make-3dposn 1 -6 6)) 16.673 .001)
 
-(define (the-length-from first-3dPosn second-3dPosn)
+(define (the-length first-3dposn second-3dposn)
   (sqrt
-   (+ (sqr (- (3dPosn-x second-3dPosn) (3dPosn-x first-3dPosn)))
-      (sqr (- (3dPosn-y second-3dPosn) (3dPosn-y first-3dPosn)))
-      (sqr (- (3dPosn-z second-3dPosn) (3dPosn-z first-3dPosn))))))
+   (+ (sqr (- (3dposn-x second-3dposn) (3dposn-x first-3dposn)))
+      (sqr (- (3dposn-y second-3dposn) (3dposn-y first-3dposn)))
+      (sqr (- (3dposn-z second-3dposn) (3dposn-z first-3dposn))))))
+
+(check-within (the-length (make-3dposn -2 4 -7) (make-3dposn 1 4 0)) 7.615 001)
+(check-within (the-length (make-3dposn 3 2 1) (make-3dposn 0 0 0)) 3.741 001)
+(check-expect (the-length (make-3dposn 0 0 0) (make-3dposn 0 0 0)) 0)
+(check-expect (the-length (make-3dposn 0 0 1) (make-3dposn 0 0 0)) 1)
+
+;; (define (test-area-triangle a b c)) consumes
+;;  three points in 3D space and produces the area
+;;  of a triangle created by those points.
+
+;; Examples
+(check-within (area-triangle (make-3dposn -5 5 -5) (make-3dposn 1 -6 6) (make-3dposn 2 -3 4)) 19.306 001)
+(check-expect (area-triangle (make-3dposn 1 2 3) (make-3dposn 4 5 6) (make-3dposn 7 8 9)) 'undefined)
+
+
+(define (test-area-triangle a b c)
+  (* (/ 1 4) (sqrt (*
+                    (+ (the-length b c)    ; Finds length A
+                       (the-length a c)    ; Finds length B
+                       (the-length a b))   ; Find length B
+                    (- (+ (the-length a c)
+                          (the-length a b))
+                       (the-length c b))
+                    (- (+ (the-length a b)
+                          (the-length b c))
+                       (the-length a c))
+                    (- (+ (the-length b c)
+                          (the-length a c))
+                       (the-length a b))))))
+
+;; Tests:
+(check-within (area-triangle (make-3dposn -5 0 5) (make-3dposn 3 -2 9) (make-3dposn 1 3 -7)) 62.928 001)
+(check-expect (area-triangle (make-3dposn 0 0 0) (make-3dposn 0 0 0) (make-3dposn 0 0 0)) 'undefined)
+
+;; (define (area-triangle a b c)) returns the area of
+;;  a 3 dimensional triangle where a, b, and c represent
+;;  the side lengths of the triangle. Returns 'undefined
+;;  if coordiantes do not produce a triangle.
+;; area-triangle : 3dPosn 3dPosn 3dPosn -> (anof Num 'undefined)
+
+;; Examples:
+(check-within (area-triangle (make-3dposn -5 5 -5) (make-3dposn 1 -6 6) (make-3dposn 2 -3 4)) 19.306 001)
+(check-expect (area-triangle (make-3dposn 1 2 3) (make-3dposn 4 5 6) (make-3dposn 7 8 9)) 'undefined)
 
 (define (area-triangle a b c)
-  (* (/ 1 4) (sqrt (* (cond
-                        [(< 0 (+ (the-length-from b c)
-                                 (the-length-from a c)
-                                 (the-length-from a b)))
-                         
-                         (+ (the-length-from b c) ; Finds length A
-                            (the-length-from a c) ; Finds length B
-                            (the-length-from a b))] ; Finds length C
-                        [else 'undefined])
-                      
-                      (cond
-                        [(< 0 (- (+ (the-length-from a c)
-                                    (the-length-from a b))
-                                 (the-length-from c b)))
-                         
-                         (- (+ (the-length-from a c)
-                               (the-length-from a b))
-                            (the-length-from c b))]
-                        [else 'undefined])
-                      
-                      (cond
-                        [(< 0 (- (+ (the-length-from a b)
-                                    (the-length-from b c))
-                                 (the-length-from a c)))
-                         
-                         (- (+ (the-length-from a b)
-                               (the-length-from b c))
-                            (the-length-from a c))]
-                        [else 'undefined])
-                      
-                      (cond
-                        [(< 0 (- (+ (the-length-from b c)
-                                    (the-length-from a c))
-                                 (the-length-from a b)))
-                         
-                         (- (+ (the-length-from b c)
-                               (the-length-from a c))
-                            (the-length-from a b))]
-                        [else 'undefined])))))
+  (cond
+    [(= 0 (test-area-triangle a b c)) 'undefined]
+    [else (test-area-triangle a b c)]))
 
-
-(area-triangle (make-3dPosn -5 5 -5) (make-3dPosn 1 -6 6) (make-3dPosn 2 -3 4))
-(area-triangle (make-3dPosn 1 2 3) (make-3dPosn 4 5 6) (make-3dPosn 7 8 9))
+;; Tests:
+(check-within (area-triangle (make-3dposn -3 2 -1) (make-3dposn 1 -6 6) (make-3dposn 5 -3 9)) 32.469 001)
+(check-expect (area-triangle (make-3dposn 0 0 0) (make-3dposn 0 0 0) (make-3dposn 0 0 0)) 'undefined)
