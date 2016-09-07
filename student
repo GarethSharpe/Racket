@@ -1,0 +1,114 @@
+;; ***********************************************************************************************
+;; Gareth Sharpe (20337731)
+;; CS 135 Winter 2016
+;; Assignment 05, Question 2
+;; ***********************************************************************************************
+
+;; (tallest alosyms alonats) consumes a list of symbols and a list of natural numbers
+;;    which represent the corresponding height of students and produces the name of the
+;;    student who is the tallest.
+;; tallest: (listof Sym) (listof Nat) -> Sym
+;; requirements: (listof Sym) and (listof Nat) must be lists of equal length
+
+;; Examples:
+(check-expect (tallest '(Jimmy Johnny Julian Jacob Jack) '(155 160.5 132 201 200)) 'Jacob)
+(check-expect (tallest '(Joe Bill Lisa Meg) '(200 170 150 175)) 'Joe)
+(check-expect (tallest '(Bob Joe Briana) '(200 200 175)) 'Bob)
+(check-expect (tallest'(Bob Joe Briana) '(171 200 175)) 'Joe)
+
+(define (tallest alosyms alonats)
+  (cond
+    [(empty? (rest alosyms)) empty]
+    [(= (first alonats) (max-list alonats)) (first alosyms)]
+    [else (tallest (rest alosyms) (rest alonats))]))
+
+(define (max-list lon)
+  (cond [(empty? (rest lon)) (first lon)]
+        [(> (first lon) (max-list (rest lon))) (first lon)]
+        [else (max-list (rest lon))]))
+
+;; (shortest alosyms alonats) consumes a list of symbols and a list of natural numbers
+;;    which represent the corresponding height of students and produces the name of the
+;;    student who is the shortest.
+;; shortest: (listof Sym) (listof Nat) -> Sym
+;; requirements: (listof Sym) and (listof Nat) must be lists of equal length
+
+;; Example:
+(check-expect (shortest '(Jimmy Johnny Julian Jacob Jack) '(155 160.5 132 201 200)) 'Julian)
+(check-expect (shortest '(Joe Bill Lisa Meg) '(200 170 150 175)) 'Lisa)
+(check-expect (shortest '(Bob Joe Briana) '(200 200 175)) 'Briana)
+(check-expect (shortest '(Bob Joe Briana) '(171 200 175)) 'Bob)
+
+(define (shortest alosyms alonats)
+  (cond
+    [(or (empty? alosyms) (empty? alonats)) empty]
+    [else (shortest-so-far alosyms alonats (first alosyms) (first alonats))]))
+
+(define (shortest-so-far alosyms alonats shortest-student shortest-so-far/acc)
+  (cond
+    [(empty? alosyms) shortest-student]
+    [(< (first alonats) shortest-so-far/acc) (shortest-so-far (rest alosyms) (rest alonats) (first alosyms) (first alonats))]
+    [else (shortest-so-far (rest alosyms) (rest alonats) shortest-student shortest-so-far/acc)]))
+
+;; Tests:
+(check-expect (shortest '() '(144 132 190 203)) empty)
+(check-expect (shortest '(Gareth Ryan Blair Briana) '()) empty)
+(check-expect (shortest '(Briana) '(190)) 'Briana)
+(check-expect (shortest '(Briana Blair Jimmy Jacob) '(0 0 0 0)) 'Briana)
+(check-expect (shortest '(Briana Briana) '(123 124)) 'Briana)
+(check-expect (shortest '() '()) empty)
+
+;; (student-al alo-names alo-heights) consumes a list of symboles and a list of
+;;    numbers corririsponding to the names and heights of the students repectively.
+;;    Produces an association list of the students names and heights.
+;; student-al: (listof Sym) (listof Nat) -> AL
+;; requirements: (listof Sym) and (listof Nat) must be lists of equal length
+
+;; Examples:
+(check-expect (student-al '(Woody Buzz Slinky Little-Bo-Peep Hamm Mr-Spell Rex) '(12 8 3 7 2 4 5))
+              '((Woody 12) (Buzz 8) (Slinky 3) (Little-Bo-Peep 7) (Hamm 2) (Mr-Spell 4) (Rex 5)))
+(check-expect (student-al '(Vader Maul Skywalker Yoda Fett Solo Leia R2-D2) '(124 112 116 43 98 121 102 68))
+              '((Vader 124) (Maul 112) (Skywalker 116) (Yoda 43) (Fett 98) (Solo 121) (Leia 102) (R2-D2 68)))
+
+(define (student-al alo-names alo-heights)
+  (cond
+    [(or (empty? alo-names) (empty? alo-heights)) empty]
+    [else (cons (cons (first alo-names) (cons (first alo-heights) empty))
+                (student-al (rest alo-names) (rest alo-heights)))]))
+
+;; Tests:
+(check-expect (student-al '(Sullivan Wazouwski Boggs Boo Waternoose-III) '(205 84 102 42 180))
+              '((Sullivan 205) (Wazouwski 84) (Boggs 102) (Boo 42) (Waternoose-III 180)))
+(check-expect (student-al '() '()) empty)
+(check-expect (student-al '() '(203 321 143)) empty)
+(check-expect (student-al '(Eric Kenny Kyle Stan Token) '()) empty)
+(check-expect (student-al '(Eric Kenny Kyle) '(69 62)) '((Eric 69) (Kenny 62)))
+
+;; (basketball al-students-heights minimum-height) consumes an association list
+;;    and a minimum height with the keys of the association list being the name
+;;    of the students and the values being the numerical heights of the students.
+;;    Produces a list of names of students whose heights are at least as tall as the
+;;    given height. 
+;; basketball: AL Nat -> (listof Sym)
+
+;; Examples:
+(check-expect (basketball '((Sullivan 205) (Wazouwski 84) (Boggs 102) (Boo 42) (Waternoose-III 180)) 179)
+              '(Sullivan Waternoose-III))
+(check-expect (basketball '((Woody 12) (Buzz 8) (Slinky 3) (Little-Bo-Peep 7) (Hamm 2) (Mr-Spell 4) (Rex 5)) 6)
+              '(Woody Buzz Little-Bo-Peep))
+
+(define (basketball al-students-heights minimum-height)
+  (cond
+    [(empty? al-students-heights) empty]
+    [(>= (first (rest (first al-students-heights))) minimum-height)
+     (cons (first (first al-students-heights)) (basketball (rest al-students-heights) minimum-height))]
+    [else (basketball (rest al-students-heights) minimum-height)]))
+
+;; Tests:
+(check-expect (basketball '((Vader 124) (Maul 112) (Skywalker 116) (Yoda 43) (Fett 98) (Solo 121) (Leia 102) (R2-D2 68)) 100)
+              '(Vader Maul Skywalker Solo Leia))
+(check-expect (basketball '((Woody 12) (Buzz 8) (Slinky 3) (Little-Bo-Peep 7) (Hamm 2) (Mr-Spell 4) (Rex 5)) 13) empty)
+(check-expect (basketball '((Woody 12) (Buzz 8) (Slinky 3) (Little-Bo-Peep 7) (Hamm 2) (Mr-Spell 4) (Rex 5)) 12) '(Woody))
+(check-expect (basketball '((Shaq 243)) 243) '(Shaq))
+(check-expect (basketball '() 10) empty)
+(check-expect (basketball '() 0) empty)     
