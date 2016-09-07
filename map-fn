@@ -1,0 +1,93 @@
+;; ***********************************************************************************************
+;; Gareth Sharpe (20337731)
+;; CS 135 Winter 2016
+;; Assignment 08, Question 2
+;; ***********************************************************************************************
+
+;; Constants
+(define fn-list-one (list + - * / list))
+(define fn-list-two (list = list + > <))
+(define int-list-one '(3 4))
+(define int-list-two '(10 5))
+(define int-list-three '(0 -3))
+
+(define predicate-list (list (list integer? <) (list string? string<?)))
+(define second-predicate-list (list (list cons? cons) (list integer? <)))
+(define third-predicate-list (list (list integer? <) (list integer? >) (list integer? sqr)))
+(define integer-list (list 1 2 3 4 5 6 7 8 9 10))
+(define symbol-list (list 'a 'b 'c))
+(define string-list (list "a" "b" "c"))
+(define cons-list (list (list 'a 'b) (list 'c 'd)))
+
+
+;; (mapfn alof alon) consumes a list of functions and a list of two
+;;    two numbers and produces the result of applying each function
+;;    in turn to the given two numbers.
+
+;; Examples:
+(check-expect (mapfn fn-list-one int-list-one) (list 7 -1 12 0.75 (list 3 4)))
+(check-expect (mapfn fn-list-two int-list-two) (list false (list 10 5) 15 true false))
+
+(define (mapfn alop aloo)
+  (cond
+    [(or (empty? alop)
+         (empty? aloo)) empty]
+    [else (cons ((first alop) (first aloo) (second aloo))
+                (mapfn (rest alop) aloo))]))
+
+;; Tests:
+(check-expect (mapfn fn-list-one int-list-two) (list 15 5 50 2 (list 10 5)))
+(check-expect (mapfn fn-list-two int-list-one) (list false (list 3 4) 7 false true))
+(check-expect (mapfn fn-list-one int-list-three) (list -3 3 0 0 (list 0 -3)))
+(check-expect (mapfn fn-list-two int-list-three) (list false (list 0 -3) -3 true false))
+(check-expect (mapfn empty empty) empty)
+(check-expect (mapfn fn-list-two empty) empty)
+(check-expect (mapfn empty int-list-three) empty)
+
+;; (predicate-check predicate aloo) consumes a list of predicates and a list
+;;    (predicate function, binary relational operator) pairs and a list of operands,
+;;    and produces the predicate that applies to the operand(s) and 'error if none apply.
+;; predicate-check: (listof (list (Any -> bool)) (X X -> Boolean))) -> (X X -> Bool)
+
+;; Examples:
+(check-expect (equal? (predicate-check predicate-list integer-list) <) true)
+(check-expect (equal? (predicate-check predicate-list string-list) string<?) true)
+(check-expect (predicate-check predicate-list symbol-list) 'error)
+
+(define (predicate-check alop aloo)
+  (cond
+    [(empty? alop) 'error]
+    [((first (first alop)) (first aloo)) (first (rest (first alop)))]
+    [else (predicate-check (rest alop) aloo)]))
+
+;; Tests:
+(check-expect (equal? (predicate-check second-predicate-list cons-list) cons) true)
+(check-expect (equal? (predicate-check third-predicate-list integer-list) <) true)
+(check-expect (predicate-check empty empty) 'error)
+(check-expect (predicate-check empty string-list) 'error)
+
+;; (is-in-order? alop aloo) consumes a list of (predicate function, binary
+;;    relational operator) pairs and a list of operands. Produces a boolean
+;;    depending on the predicate function and evaluated operand(s).
+;; is-in-order?: (listof (list (Any -> Bool) (X X -> Bool)))
+;;               (listof Any) -> (anyof Bool ’error)
+;; requires: first list is non-empty
+
+;; Examples:
+(check-expect (is-in-order? predicate-list integer-list) true)
+(check-expect (is-in-order? predicate-list symbol-list) 'error)
+(check-expect (is-in-order? predicate-list string-list) true)
+(check-expect (is-in-order? predicate-list (list 5 4 3 8)) false)
+
+(define (is-in-order? alop aloo)
+  (cond
+    [(or (empty? aloo) (empty? (rest aloo))) true]
+    [(equal? 'error (predicate-check alop aloo)) 'error]
+    [else (first (mapfn (list (predicate-check alop aloo)) aloo))]))
+
+;; Tests;
+(check-expect (is-in-order? predicate-list empty) true)
+(check-expect (is-in-order? predicate-list (list 1)) true)
+(check-expect (is-in-order? empty empty) true)
+(check-expect (is-in-order? predicate-list empty) true)
+(check-expect (is-in-order? empty string-list) 'error)
