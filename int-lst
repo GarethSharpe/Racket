@@ -1,0 +1,146 @@
+;; ********************************************************************************************
+;; Gareth Sharpe (20337731)
+;; CS 135 Winter 2016
+;; Assignment 04, Question 2
+;; ********************************************************************************************
+
+;; A (listof Int) is one of:
+;; * empty
+;; * (cons Str (listof Int))
+
+;; (elements-more-than list-of-ints int) produce a list of integers from
+;;    the original list that are strictly greater than the integer given.
+;; elements-more-than: (listof Int) Int -> (listof Int)
+
+;; Examples:
+(check-expect (elements-more-than (cons 1 (cons 2 (cons 3 empty))) 2) (cons 3 empty))
+(check-expect (elements-more-than (cons 5 (cons -1 (cons 3 empty))) 0) (cons 5 (cons 3 empty)))
+
+(define (elements-more-than list-of-ints int)
+  (cond
+    [(empty? list-of-ints) empty]
+    [(< int (first list-of-ints))
+     (cons (first list-of-ints) (elements-more-than (rest list-of-ints) int))]
+    [else (elements-more-than (rest list-of-ints) int)]))
+
+;; Tests:
+(check-expect (elements-more-than (cons 5 (cons -1 (cons 3 empty))) -2) (cons 5 (cons -1 (cons 3 empty))))
+(check-expect (elements-more-than (cons 5 (cons -1 (cons 3 empty))) 5) empty)
+(check-expect (elements-more-than empty 0) empty)
+(check-expect (elements-more-than (cons 1 (cons 2 (cons 3 empty))) 2) (cons 3 empty))
+
+;; (arithmetic-sequence? list-of-ints) produces true if the list is an
+;;    arithmetic sequence and false otherwise.
+;; arithmetic-sequence: (listof Int) -> Bool
+
+;; Examples:
+(check-expect (arithmetic-sequence? (cons 1 (cons 2 (cons 3 (cons 4 empty))))) true)
+(check-expect (arithmetic-sequence? (cons 1 (cons 4 (cons 7 (cons 10 empty))))) true)
+
+(define (arithmetic-sequence? list-of-ints)
+  (cond
+    [(or (empty? list-of-ints)
+         (= (length list-of-ints) 1)
+         (= (length list-of-ints) 2)) true]
+    [(= (abs (- (first (rest list-of-ints)) (first list-of-ints)))
+        (abs (- (first (rest (rest list-of-ints))) (first (rest list-of-ints)))))
+     (arithmetic-sequence? (rest list-of-ints))]
+    [else false]))
+
+;; Tests:
+(check-expect (arithmetic-sequence? (cons -5 (cons 0 (cons 5 (cons 10 empty))))) true)
+(check-expect (arithmetic-sequence? (cons -3 (cons -2 (cons -1 (cons 0 empty))))) true)
+(check-expect (arithmetic-sequence? (cons 1 (cons 5 (cons 7 (cons 3 empty))))) false)
+(check-expect (arithmetic-sequence? (cons 1 (cons 2 (cons 3 (cons 5 empty))))) false)
+(check-expect (arithmetic-sequence? (cons 1 (cons 2 (cons 3 (cons 4 empty))))) true)
+
+;; (base-check alon) checks to see if alon contains any single digit
+;;    and/or negative integers. If alon does, it returs an error when
+;;    passsed to (sort-list alon).
+;; base-check: (listof Int) -> Bool
+
+;; Examples:
+(check-expect (base-check (cons -7 (cons -8 (cons -9 empty)))) true)
+(check-expect (base-check (cons 1 (cons 2 (cons 8 empty)))) false)
+
+(define (base-check alon)
+  (cond
+    [(empty? alon) false]
+    [(or (< 9 (first alon))
+         (> 0 (first alon))) true]
+    [else (base-check (rest alon))]))
+
+;; Tests:
+(check-expect (base-check (cons 3 (cons 1 (cons 10 empty)))) true)
+(check-expect (base-check (cons 1 (cons 2 (cons 9 empty)))) false)
+
+;; (insert number-to-check alon) creates a list of numbers from alon
+;;    which has the greatest value of number-to-check as the first
+;;    element in a list in descending order.
+;; insert: Num (listof Str) -> (listof Str)
+
+;; Examples:
+(check-expect (insert 3 (cons 1 (cons 2 empty))) (cons 3 (cons 1 (cons 2 empty))))
+(check-expect (insert 3 (cons 5 (cons 4 empty))) (cons 5 (cons 4 (cons 3 empty))))
+
+(define (insert number-to-check alon) 
+  (cond 
+    [(empty? alon) (cons number-to-check empty)]
+    [(> number-to-check (first alon)) (cons number-to-check alon)] 
+    [else (cons (first alon) 
+                (insert number-to-check (rest alon)))]))
+
+;; Tests:
+(check-expect (insert 3 (cons 1 (cons 2 empty))) (cons 3 (cons 1 (cons 2 empty))))
+(check-expect (insert 2 (cons 1 (cons 3 empty))) (cons 2 (cons 1 (cons 3 empty))))
+(check-expect (insert 0 (cons 1 (cons 2 empty))) (cons 1 (cons 2 (cons 0 empty))))
+(check-expect (insert 1 (cons 1 (cons 1 empty))) (cons 1 (cons 1 (cons 1 empty))))
+
+;; (sort-list alon) creates a list of numbers from alon which are arranged
+;;    in descending order.
+;; sort-list: (listof Str) -> (listof Int)
+
+;; Examples:
+(check-expect (sort-list (cons -7 (cons -8 (cons -9 empty)))) 'error)
+(check-expect (sort-list (cons 1 (cons 2 (cons 8 empty)))) (cons 8 (cons 2 (cons 1 empty))))
+
+(define (sort-list alon) 
+  (cond
+    [(base-check alon) 'error]
+    [(empty? alon) empty] 
+    [else (insert (first alon) (sort-list (rest alon)))]))
+
+;; Tests:
+(check-expect (sort-list (cons 4 (cons 5 (cons 6 empty)))) (cons 6 (cons 5 (cons 4 empty))))
+(check-expect (sort-list (cons 6 (cons 3 (cons 9 empty)))) (cons 9 (cons 6 (cons 3 empty))))
+(check-expect (sort-list (cons -1 (cons -2 (cons 8 empty)))) 'error)
+(check-expect (sort-list (cons 0 (cons 0 (cons 0 empty)))) (cons 0 (cons 0 (cons 0 empty))))
+(check-expect (sort-list (cons 1 empty)) (cons 1 empty))
+
+;; (digits->integer list-of-ints) produces the integer represented by those
+;;    digits, where the least significant digit is at the beginning of the
+;;    list and the most significant digit is at the end of the list. 
+;; digits->integer: (listof Int) -> Int
+;; requires: list-of-ints must be single digit, non-negative integers.
+
+;; Examples:
+(check-expect (digits->integer (cons 1 (cons 4 (cons 5 (cons 6 empty))))) 6541)
+(check-expect (digits->integer (cons 0 (cons 1 (cons 2 (cons 0 empty))))) 2100)
+(check-expect (digits->integer (cons -7 (cons -8 (cons -9 empty)))) 'error)
+
+(define (digits->integer list)
+  (cond
+    [(base-check list) 'error]
+    [(not (empty? (sort-list list))) (+ (* (first (sort-list list))
+                                      (expt 10 (length (rest (sort-list list)))))
+                                   (digits->integer (rest (sort-list list))))]
+    [else 0]))
+
+;; Tests
+(check-expect (digits->integer (cons 3 (cons 2 (cons 1 (cons 8 empty))))) 8321)
+(check-expect (digits->integer (cons 1 (cons 1 (cons 1 (cons 1 empty))))) 1111)
+(check-expect (digits->integer (cons -7 (cons 0 (cons 1 empty)))) 'error)
+(check-expect (digits->integer (cons 0 (cons 0 (cons 0 empty)))) 0000)
+(check-expect (digits->integer (cons 10 (cons 1 (cons 2 (cons 5 empty))))) 'error)
+(check-expect (digits->integer empty) 0)
+(check-expect (digits->integer (cons 1 empty)) 1)
