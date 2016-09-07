@@ -1,0 +1,237 @@
+;; ***********************************************************************************************
+;; Gareth Sharpe (20337731)
+;; CS 135 Winter 2016
+;; Assignment 05, Question 3
+;; ***********************************************************************************************
+
+;; A PlantInfoList is a (listof PlantInfo)
+
+;; A CityInfoList is a (listof CityInfo)
+
+(define-struct cityinfo (name zone subzone))
+;; A CityInfo is a (make-cityinfo Str Nat Sym)
+;; requires: name corrisponds to a valid Canadian city
+;;           0 <= zone <= 9
+;;           subzone is one of {'a, 'b}
+
+(define-struct plantinfo (name zone subzone))
+;; A PlantInfo is a (make-plantinfo Str Nat Sym). 
+;; requires: name corrisponds to a valid plant name
+;;           0 <= zone <= 9
+;;           subzone is one of {'a, 'b}
+
+(define sample-plant-data
+  (list (make-plantinfo "blue eyed grass" 5 'b)
+        (make-plantinfo "hosta" 3 'a)
+        (make-plantinfo "columbine" 4 'a)
+        (make-plantinfo "chrysanthemum" 3 'b)
+        (make-plantinfo "ash" 3 'b)
+        (make-plantinfo "toad lily" 4 'b)
+        (make-plantinfo "agapanthus" 8 'a)
+        (make-plantinfo "liriope" 7 'b)
+        (make-plantinfo "blue spruce" 5 'b)
+        (make-plantinfo "arrowood" 5 'b)))
+
+(define sample-city-data
+  (list (make-cityinfo "Vancouver" 8 'b)
+        (make-cityinfo "Edmonton" 3 'a) 
+        (make-cityinfo "Waterloo" 5 'b)
+        (make-cityinfo "Saint John" 5 'a)
+        (make-cityinfo "Halifax" 6 'a)
+        (make-cityinfo "Happy Valley-Goose Bay" 1 'a)
+        (make-cityinfo "Ottawa" 5 'b)
+        (make-cityinfo "Toronto" 4 'a)
+        (make-cityinfo "Sudbury" 3 'b)
+        (make-cityinfo "Thunder Bay" 3 'b)))
+
+;; (find-hardy-lants CityInfo PlantInfoList) consumes a CityInfo and a PlantInfoList and
+;;    produces a PlantInfoList value containing only PlantInfos for plants that will
+;;    grow in the given zone.
+
+;; Example:
+(check-expect (find-hardy-plants (make-cityinfo "Edmonton" 3 'a) sample-plant-data) (list (make-plantinfo "hosta" 3 'a)))
+(check-expect (find-hardy-plants (make-cityinfo "Quebec" 4 'b) sample-plant-data) (list (make-plantinfo "toad lily" 4 'b)))
+(check-expect (find-hardy-plants (make-cityinfo "Vancouver" 8 'b) sample-plant-data) '())
+
+(define (find-hardy-plants cityinfo plantinfolist)
+  (cond
+    [(empty? plantinfolist) empty]
+    [(and (equal? (plantinfo-zone (first plantinfolist)) (cityinfo-zone cityinfo))
+          (equal? (plantinfo-subzone (first plantinfolist)) (cityinfo-subzone cityinfo)))
+     (cons (first plantinfolist) (find-hardy-plants cityinfo (rest plantinfolist)))]
+    [else (find-hardy-plants cityinfo (rest plantinfolist))]))
+
+;; Tests:
+(check-expect (find-hardy-plants (make-cityinfo "Waterloo" 5 'b) sample-plant-data) (list (make-plantinfo "blue eyed grass" 5 'b)
+                                                                                          (make-plantinfo "blue spruce" 5 'b)
+                                                                                          (make-plantinfo "arrowood" 5 'b)))
+(check-expect (find-hardy-plants (make-cityinfo "Saint John" 5 'a) sample-plant-data) '())
+(check-expect (find-hardy-plants (make-cityinfo "Happy Valley-Goose Bay" 1 'a) sample-plant-data) '())
+
+;; (find-growing-cities plantinfo cityinfolist) consumes a PlantInfo and a CityInfoList and produces a (listof Str)
+;;    containing the names of all of the cities in which the plant will grow.
+;; find-growing-cities: PlantInfo CityInfoList -> (listof Str)
+
+;; Example:
+(check-expect (find-growing-cities (make-plantinfo "blue eyed grass" 5 'b) sample-city-data) '("Waterloo" "Ottawa"))
+(check-expect (find-growing-cities (make-plantinfo "chrysanthemum" 3 'b) sample-city-data) '("Sudbury" "Thunder Bay"))
+(check-expect (find-growing-cities (make-plantinfo "hosta" 3 'a) sample-city-data) '("Edmonton"))
+(check-expect (find-growing-cities (make-plantinfo "toad lily" 4 'b) sample-city-data) '())
+
+(define (find-growing-cities plantinfo cityinfolist)
+  (cond
+    [(empty? cityinfolist) empty]
+    [(and (equal? (cityinfo-zone (first cityinfolist)) (plantinfo-zone plantinfo))
+          (equal? (cityinfo-subzone (first cityinfolist)) (plantinfo-subzone plantinfo)))
+     (cons (cityinfo-name (first cityinfolist)) (find-growing-cities plantinfo (rest cityinfolist)))]
+    [else (find-growing-cities plantinfo (rest cityinfolist))]))
+
+;; Tests:
+(check-expect (find-growing-cities (make-plantinfo "agapanthus" 8 'a) sample-city-data) '())
+(check-expect (find-growing-cities (make-plantinfo "columbine" 4 'a) sample-city-data) '("Toronto"))
+(check-expect (find-growing-cities (make-plantinfo "ash" 3 'b) sample-city-data) '("Sudbury" "Thunder Bay"))
+
+;; (insert number-to-check alon) creates a list of numbers from alon
+;;    which has the greatest value of number-to-check as the first
+;;    element in a list.
+;; insert: Num (listof Str) -> (listof Str)
+
+;; Examples:
+(check-expect (insert 3 (cons 1 (cons 2 empty))) (cons 1 (cons 2 (cons 3 empty))))
+(check-expect (insert 3 (cons 5 (cons 4 empty))) (cons 3 (cons 5 (cons 4 empty))))
+
+(define (insert number-to-check alon) 
+  (cond 
+    [(empty? alon) (cons number-to-check empty)]
+    [(< number-to-check (first alon)) (cons number-to-check alon)] 
+    [else (cons (first alon) 
+                (insert number-to-check (rest alon)))]))
+
+;; Tests:
+(check-expect (insert 3 (cons 1 (cons 2 empty))) (cons 1 (cons 2 (cons 3 empty))))
+(check-expect (insert 2 (cons 1 (cons 3 empty))) (cons 1 (cons 2 (cons 3 empty))))
+(check-expect (insert 0 (cons 1 (cons 2 empty))) (cons 0 (cons 1 (cons 2 empty))))
+(check-expect (insert 1 (cons 1 (cons 1 empty))) (cons 1 (cons 1 (cons 1 empty))))
+
+;; (sort-list alon) creates a list of numbers from alon which are arranged
+;;    in descending order.
+;; sort-list: (listof Nat) -> (listof Nat)
+
+;; Examples:
+(check-expect (sort-list (cons 1 (cons 2 (cons 8 empty)))) (cons 1 (cons 2 (cons 8 empty))))
+
+(define (sort-list alon) 
+  (cond
+    [(empty? alon) empty] 
+    [else (insert (first alon) (sort-list (rest alon)))]))
+
+;; Tests:
+(check-expect (sort-list (cons 4 (cons 5 (cons 6 empty)))) (cons 4 (cons 5 (cons 6 empty))))
+(check-expect (sort-list (cons 6 (cons 3 (cons 9 empty)))) (cons 3 (cons 6 (cons 9 empty))))
+(check-expect (sort-list (cons 0 (cons 0 (cons 0 empty)))) (cons 0 (cons 0 (cons 0 empty))))
+(check-expect (sort-list (cons 1 empty)) (cons 1 empty))
+
+;; (create-zone-list cityinfolist) consumes a CityInfoList and produces a list of the zones of those cities.
+;; create-zone-list: CityInfoList -> (listof Nat)
+
+;; Example:
+(check-expect (create-zone-list sample-plant-data) '(5 3 4 3 3 4 8 7 5 5))
+
+(define (create-zone-list plantlistinfo)
+  (cond
+    [(empty? plantlistinfo) empty]
+    [else (cons (plantinfo-zone (first plantlistinfo)) (create-zone-list (rest plantlistinfo)))]))
+
+;; (coldest-winter city-zones) consumes a list of the zones of each city and produces the coldest zone.
+;; coldest-winter: (listof Nat) -> Nat
+
+;; Example:
+(check-expect (coldest-zone '(5 3 4 3 3 4 8 7 5 5)) 3)
+
+(define (coldest-zone zone-list)
+  (cond
+    [(empty? zone-list) empty]
+    [else (first (sort-list zone-list))]))
+
+;; (coldest-zone-and-subzone cityinfolist) consumes a CityInfoList and produces the coldest winter.
+;; coldest-zone-and-subzone: CityInfoList -> (listof Nat Sym)
+
+;; Example:
+(check-expect (coldest-zone-and-subzone sample-plant-data) (list 3 'a))
+
+(define (coldest-zone-and-subzone plantinfolist)
+  (cond
+    [(empty? plantinfolist) empty]
+    [(and (equal? (plantinfo-zone (first plantinfolist)) (coldest-zone (sort-list (create-zone-list plantinfolist))))
+          (equal? (plantinfo-subzone (first plantinfolist)) 'b)
+          (not (equal? (plantinfo-subzone (first plantinfolist)) 'a))) (cons (coldest-zone (sort-list (create-zone-list plantinfolist))) (cons 'b empty))]
+    [else (cons (coldest-zone (sort-list (create-zone-list plantinfolist))) (cons 'a empty))]))
+
+;; Tests:
+(check-expect (coldest-zone-and-subzone (list (make-plantinfo "toad lily" 4 'b) (make-plantinfo "agapanthus" 8 'a))) (list 4 'b))
+(check-expect (coldest-zone-and-subzone (list (make-plantinfo "blue eyed grass" 5 'b)
+                                              (make-plantinfo "hosta" 3 'a)
+                                              (make-plantinfo "columbine" 4 'a))) (list 3 'a))
+
+;; (find-plantless-cities plantlistinfo cityinfolist) consumes a PlantInfoList and a CityListInfo and produces
+;;    a CityInfoList containing all of the CityInfos in the given CityInfoList for which no plants in the
+;;    PlantInfoList would survive the winter.
+;; find-plantless-cities: PlantInfoList CityListInfo -> CityInfoList
+
+;; Example:
+(check-expect (find-plantless-cities sample-plant-data sample-city-data) (list (make-cityinfo "Happy Valley-Goose Bay" 1 'a)))
+
+(check-expect (find-plantless-cities (list (make-plantinfo "toad lily" 4 'b)
+                                           (make-plantinfo "agapanthus" 8 'a)) sample-city-data)
+              (list (make-cityinfo "Edmonton" 3 'a)
+                    (make-cityinfo "Happy Valley-Goose Bay" 1 'a)
+                    (make-cityinfo "Toronto" 4 'a)))
+
+(define (find-plantless-cities plantinfolist cityinfolist)
+  (cond
+    ;; Empty Case
+    [(or (empty? plantinfolist)
+         (empty? cityinfolist)) empty]
+    
+    ;; Case 1
+    [(and (equal? (first (rest (coldest-zone-and-subzone plantinfolist))) 'a)
+          (equal? (cityinfo-subzone (first cityinfolist)) 'a)
+          (< (cityinfo-zone (first cityinfolist)) (first (coldest-zone-and-subzone plantinfolist))))
+     (cons (first cityinfolist)
+           (find-plantless-cities plantinfolist (rest cityinfolist)))]
+    
+    ;; Case 2
+    [(and (equal? (first (rest (coldest-zone-and-subzone plantinfolist))) 'a)
+          (equal? (cityinfo-subzone (first cityinfolist)) 'b)
+          (< (cityinfo-zone (first cityinfolist)) (first (coldest-zone-and-subzone plantinfolist))))
+     (cons (first cityinfolist)
+           (find-plantless-cities plantinfolist (rest cityinfolist)))]
+    
+    ;; Case 3
+    [(and (equal? (first (rest (coldest-zone-and-subzone plantinfolist))) 'b)
+          (equal? (cityinfo-subzone (first cityinfolist)) 'a)
+          (<= (cityinfo-zone (first cityinfolist)) (first (coldest-zone-and-subzone plantinfolist))))
+     (cons (first cityinfolist)
+           (find-plantless-cities plantinfolist (rest cityinfolist)))]
+    
+    ;; Case 4
+    [else (find-plantless-cities plantinfolist (rest cityinfolist))]))
+
+;; Tests:
+(check-expect (find-plantless-cities (list (make-plantinfo "blue eyed grass" 5 'b)
+                                           (make-plantinfo "hosta" 3 'a)
+                                           (make-plantinfo "columbine" 4 'a)) sample-city-data) (list (make-cityinfo "Happy Valley-Goose Bay" 1 'a)))
+
+(check-expect (find-plantless-cities (list (make-plantinfo "agapanthus" 8 'a)) sample-city-data)  (list (make-cityinfo "Edmonton" 3 'a) 
+                                                                                                        (make-cityinfo "Waterloo" 5 'b)
+                                                                                                        (make-cityinfo "Saint John" 5 'a)
+                                                                                                        (make-cityinfo "Halifax" 6 'a)
+                                                                                                        (make-cityinfo "Happy Valley-Goose Bay" 1 'a)
+                                                                                                        (make-cityinfo "Ottawa" 5 'b)
+                                                                                                        (make-cityinfo "Toronto" 4 'a)
+                                                                                                        (make-cityinfo "Sudbury" 3 'b)
+                                                                                                        (make-cityinfo "Thunder Bay" 3 'b)))
+
+(check-expect (find-plantless-cities (list (list)) (list)) empty)
+
+(check-expect (find-plantless-cities (list (make-plantinfo "agapanthus" 8 'a)) (list)) empty)
