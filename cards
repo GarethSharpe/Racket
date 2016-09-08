@@ -1,0 +1,197 @@
+;; ***********************************************************************************************
+;; Gareth Sharpe (20337731)
+;; CS 135 Winter 2016
+;; Assignment 03, Question 4
+;; ***********************************************************************************************
+
+;; A Card is a (make-card Nat Sym)
+;; requires: Nat in range (1, 13) inclusive
+;;           Sym is one of {'clubs, 'diamonds, 'hearts, 'spades}
+
+;; A Hand is a (make-Hand Card Card Card)
+
+(define-struct card (rank suit))
+(define-struct hand (c1 c2 c3))
+
+;; (define (better-rank card-1 card-2)) consumes two
+;;  Cards and produces which one is of higher rank.
+;; (better rank) : Card Card -> Card
+;; requires: Both card-1 and card-2 must be of the same suit
+
+;; Example:
+(check-expect (better-rank (make-card 10 'spades) (make-card 3 'spades)) (make-card 10 'spades))
+(check-expect (better-rank (make-card 2 'clubs) (make-card 5 'clubs)) (make-card 5 'clubs))
+
+(define (better-rank card-1 card-2)
+  (cond
+    [(> (card-rank card-1) (card-rank card-2)) card-1]
+    [(< (card-rank card-1) (card-rank card-2)) card-2]
+    [else card-1]))
+
+;; Tests:
+(check-expect (better-rank (make-card 13 'hearts) (make-card 13 'hearts)) (make-card 13 'hearts))
+(check-expect (better-rank (make-card 1 'diamonds) (make-card 1 'diamonds)) (make-card 1 'diamonds))
+
+;; (define (better-card card-1 card-2)) consumes two cards and
+;; produces the card that is the better of the two.
+;; (better-card) : card card -> card
+
+;; Examples:
+(check-expect (better-card (make-card 8 'diamonds) (make-card 12 'clubs)) (make-card 8 'diamonds))
+(check-expect (better-card (make-card 1 'clubs) (make-card 12 'clubs)) (make-card 12 'clubs))
+
+(define (better-card card-1 card-2)
+  (cond
+    [(and (equal? (card-suit card-1) 'clubs)
+          (equal? (card-suit card-2) 'diamonds)) card-2]
+    [(and (equal? (card-suit card-1) 'diamonds)
+          (equal? (card-suit card-2) 'hearts)) card-2]
+    [(and (equal? (card-suit card-1) 'hearts)
+          (equal? (card-suit card-2) 'spades)) card-2]
+    [(equal? (card-suit card-1) (card-suit card-2)) (better-rank card-1 card-2)]
+    [else card-1]))
+
+;; Tests:
+(check-expect (better-card (make-card 12 'diamonds) (make-card 5 'clubs)) (make-card 12 'diamonds))
+(check-expect (better-card (make-card 1 'diamonds) (make-card 1 'diamonds)) (make-card 1 'diamonds))
+(check-expect (better-card (make-card 8 'diamonds) (make-card 12 'hearts)) (make-card 12 'hearts))
+(check-expect (better-card (make-card 5 'clubs) (make-card 12 'diamonds)) (make-card 12 'diamonds))
+(check-expect (better-card (make-card 1 'clubs) (make-card 12 'clubs)) (make-card 12 'clubs))
+(check-expect (better-card (make-card 13 'hearts) (make-card 12 'hearts)) (make-card 13 'hearts))
+(check-expect (better-card (make-card 13 'hearts) (make-card 13 'hearts)) (make-card 13 'hearts))
+(check-expect (better-card (make-card 13 'hearts) (make-card 13 'spades)) (make-card 13 'spades))
+(check-expect (better-card (make-card 8 'spades) (make-card 8 'spades)) (make-card 8 'spades))
+(check-expect (better-card (make-card 9 'spades) (make-card 8 'clubs)) (make-card 9 'spades))
+(check-expect (better-card (make-card 1 'spades) (make-card 13 'hearts)) (make-card 1 'spades))
+
+;; (define (average rank-card1 rank-card-2 rank-card-3)) consumes
+;;  a Hand and returns the average rank of the cards in that Hand.
+;; (average) : Hand -> Num
+
+;; Examples:
+(check-expect (average (make-hand (make-card 12 'clubs) (make-card 6 'clubs) (make-card 12 'diamonds))) 10)
+(check-expect (average (make-hand (make-card 3 'clubs) (make-card 1 'clubs) (make-card 2 'diamonds))) 2)
+
+(define (average hand)
+  (/ (+
+      (card-rank (hand-c1 hand))
+      (card-rank (hand-c2 hand))
+      (card-rank (hand-c3 hand))) 3))
+
+;; Tests
+(check-expect (average (make-hand (make-card 1 'clubs) (make-card 1 'clubs) (make-card 1 'diamonds))) 1)
+(check-expect (average (make-hand (make-card 3 'hearts) (make-card 13 'clubs) (make-card 5 'spades))) 7)
+(check-expect (average (make-hand (make-card 4 'diamonds) (make-card 5 'clubs) (make-card 6 'diamonds))) 5)
+
+;; (define (hand-value Hand)) consumes a Hand
+;;  and produces the best hand-value of the given Hand.
+;; (hand-value) : Hand -> Sym
+
+;; Examples:
+(check-expect (hand-value (make-hand (make-card 13 'spades)
+                                     (make-card 5 'clubs)
+                                     (make-card 13 'diamonds))) 'pair)
+
+(check-expect (hand-value (make-hand (make-card 8 'clubs)
+                                     (make-card 9 'hearts)
+                                     (make-card 6 'spades))) 'high-card)
+
+(define (hand-value hand)
+  (cond
+    [(and (and (equal? (card-suit (hand-c1 hand)) (card-suit (hand-c2 hand)))
+               (equal? (card-suit (hand-c1 hand)) (card-suit (hand-c3 hand))))
+          (or (and (equal? (average hand) (+ (card-rank (hand-c1 hand)) 1))
+                   (equal? (average hand) (- (card-rank (hand-c2 hand)) 1)))
+              (and (equal? (average hand) (+ (card-rank (hand-c2 hand)) 1))
+                   (equal? (average hand) (- (card-rank (hand-c1 hand)) 1)))
+              (and (equal? (average hand) (+ (card-rank (hand-c1 hand)) 1))
+                   (equal? (average hand) (- (card-rank (hand-c3 hand)) 1)))
+              (and (equal? (average hand) (+ (card-rank (hand-c3 hand)) 1))
+                   (equal? (average hand) (- (card-rank (hand-c1 hand)) 1)))
+              (and (equal? (average hand) (+ (card-rank (hand-c2 hand)) 1))
+                   (equal? (average hand) (- (card-rank (hand-c3 hand)) 1)))
+              (and (equal? (average hand) (+ (card-rank (hand-c3 hand)) 1))
+                   (equal? (average hand) (- (card-rank (hand-c2 hand)) 1)))))
+     'straight-flush]
+    
+    [(and (equal? (card-suit (hand-c1 hand)) (card-suit (hand-c2 hand)))
+          (equal? (card-suit (hand-c1 hand)) (card-suit (hand-c3 hand))))
+     'flush]
+    
+    [(or (and (equal? (average hand) (+ (card-rank (hand-c1 hand)) 1))
+              (equal? (average hand) (- (card-rank (hand-c2 hand)) 1)))
+         (and (equal? (average hand) (+ (card-rank (hand-c2 hand)) 1))
+              (equal? (average hand) (- (card-rank (hand-c1 hand)) 1)))
+         (and (equal? (average hand) (+ (card-rank (hand-c1 hand)) 1))
+              (equal? (average hand) (- (card-rank (hand-c3 hand)) 1)))
+         (and (equal? (average hand) (+ (card-rank (hand-c3 hand)) 1))
+              (equal? (average hand) (- (card-rank (hand-c1 hand)) 1)))
+         (and (equal? (average hand) (+ (card-rank (hand-c2 hand)) 1))
+              (equal? (average hand) (- (card-rank (hand-c3 hand)) 1)))
+         (and (equal? (average hand) (+ (card-rank (hand-c3 hand)) 1))
+              (equal? (average hand) (- (card-rank (hand-c2 hand)) 1))))
+     'straight]
+    
+    [(and (equal? (card-rank (hand-c1 hand)) (card-rank (hand-c2 hand)))
+          (equal? (card-rank (hand-c1 hand)) (card-rank (hand-c3 hand))))
+     'three-of-a-kind]
+    
+    [(or (equal? (card-rank (hand-c1 hand)) (hand-c2 hand))
+         (equal? (card-rank (hand-c1 hand)) (card-rank (hand-c3 hand)))
+         (equal? (card-rank (hand-c2 hand)) (card-rank (hand-c3 hand))))
+     'pair]
+    
+    [else 'high-card]))
+
+;; Tests:
+(check-expect (hand-value (make-hand (make-card 1 'diamonds)
+                                     (make-card 2 'diamonds)
+                                     (make-card 3 'diamonds))) 'straight-flush)
+
+(check-expect (hand-value (make-hand (make-card 13 'hearts)
+                                     (make-card 12 'hearts)
+                                     (make-card 11 'hearts))) 'straight-flush)
+
+(check-expect (hand-value (make-hand (make-card 8 'clubs)
+                                     (make-card 7 'clubs)
+                                     (make-card 9 'clubs))) 'straight-flush)
+
+(check-expect (hand-value (make-hand (make-card 1 'hearts)
+                                     (make-card 4 'hearts)
+                                     (make-card 9 'hearts))) 'flush)
+
+(check-expect (hand-value (make-hand (make-card 5 'spades)
+                                     (make-card 6 'spades)
+                                     (make-card 1 'spades))) 'flush)
+
+(check-expect (hand-value (make-hand (make-card 1 'clubs)
+                                     (make-card 2 'hearts)
+                                     (make-card 3 'diamonds))) 'straight)
+
+(check-expect (hand-value (make-hand (make-card 7 'clubs)
+                                     (make-card 6 'hearts)
+                                     (make-card 5 'diamonds))) 'straight)
+
+(check-expect (hand-value (make-hand (make-card 5 'clubs)
+                                     (make-card 5 'spades)
+                                     (make-card 5 'diamonds))) 'three-of-a-kind)
+
+(check-expect (hand-value (make-hand (make-card 13 'spades)
+                                     (make-card 13 'hearts)
+                                     (make-card 13 'diamonds))) 'three-of-a-kind)
+
+(check-expect (hand-value (make-hand (make-card 5 'spades)
+                                     (make-card 13 'hearts)
+                                     (make-card 5 'diamonds))) 'pair)
+
+(check-expect (hand-value (make-hand (make-card 13 'spades)
+                                     (make-card 5 'clubs)
+                                     (make-card 13 'diamonds))) 'pair)
+
+(check-expect (hand-value (make-hand (make-card 1 'spades)
+                                     (make-card 13 'hearts)
+                                     (make-card 9 'diamonds))) 'high-card)
+
+(check-expect (hand-value (make-hand (make-card 8 'clubs)
+                                     (make-card 9 'hearts)
+                                     (make-card 6 'spades))) 'high-card)
