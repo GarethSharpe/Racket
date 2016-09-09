@@ -1,0 +1,470 @@
+;; ***********************************************************************************************
+;; Gareth Sharpe (20337731)
+;; CS 135 Winter 2016
+;; Assignment 10, Question 1
+;; ***********************************************************************************************
+
+(require "a10.rkt")
+
+;; (require "kanoodle.rkt")
+
+;; A Grid is a (listof (listof Char))
+;; requires: both inner and outer lists of Grid are non-empty
+
+(define-struct pos (x y))
+;; A Pos is a (make-pos Int Int)
+
+(define-struct state (puzzle pieces))
+;; A State is a (make-state Grid (listof Grid))
+
+;; A temporary neighbours function that always fails.  
+;; Provide only the purpose, contract and function definition.
+(define (neighbours s) empty)
+
+;; (build-2dlist w h f) consumes  two natural numbers, representing
+;;    the width and height of a grid, and a function that is applied
+;;    to all (x, y) positions corresponding to positions in the grid,
+;;    in that order.
+;; build-2dlist: Nat Nat (Any -> Nat) -> (listof (listof Num))
+
+;; Examples:
+(check-expect (build-2dlist 3 2 +) (list (list 0 1 2)
+                                         (list 1 2 3)))
+(check-expect (build-2dlist 5 5 -) (list (list 0 1 2 3 4)
+                                         (list -1 0 1 2 3)
+                                         (list -2 -1 0 1 2)
+                                         (list -3 -2 -1 0 1)
+                                         (list -4 -3 -2 -1 0)))
+(check-expect (build-2dlist 0 4 +) (list empty empty empty empty))                        
+
+(define (build-2dlist w h f)
+  (local [(define (rows i)
+            (local ((define (element j) (f j i)))
+              (build-list w element)))]
+    (build-list h rows)))
+
+;; Tests:
+(check-expect (build-2dlist 0 0 +) empty)
+(check-expect (build-2dlist 5 0 +) empty)
+(check-expect (build-2dlist 1 1 +) (list (list 0)))
+(check-expect (build-2dlist 1 1 -) (list (list 0)))
+(check-expect (build-2dlist 3 3 +) (list (list 0 1 2)
+                                         (list 1 2 3)
+                                         (list 2 3 4)))
+(check-expect (build-2dlist 3 2 *) (list (list 0 0 0)
+                                         (list 0 1 2)))
+(check-expect (build-2dlist 3 3 max) (list (list 0 1 2)
+                                           (list 1 1 2)
+                                           (list 2 2 2)))
+(check-expect (build-2dlist 3 3 min) (list (list 0 0 0)
+                                           (list 0 1 1)
+                                           (list 0 1 2)))
+
+;; (all-positions w h) consumes two natural numbers and produces a (listof Pos)
+;;    containing all possible positions in a gride with width w and hight h.
+;; all-positions: Nat Nat -> (listof Pos)
+
+;; Examples:
+(check-expect (lists-equiv? (all-positions 3 2) (list (make-pos 0 0)(make-pos 1 0) (make-pos 2 0)
+                                                      (make-pos 0 1) (make-pos 1 1) (make-pos 2 1))) true)
+(check-expect (lists-equiv? (all-positions 1 1) (list (make-pos 0 0))) true)
+(check-expect (lists-equiv? (all-positions 5 5) (list
+                                                 (make-pos 0 0) (make-pos 1 0) (make-pos 2 0) (make-pos 3 0) (make-pos 4 0)
+                                                 (make-pos 0 1) (make-pos 1 1) (make-pos 2 1) (make-pos 3 1) (make-pos 4 1)
+                                                 (make-pos 0 2) (make-pos 1 2) (make-pos 2 2) (make-pos 3 2) (make-pos 4 2)
+                                                 (make-pos 0 3) (make-pos 1 3) (make-pos 2 3) (make-pos 3 3) (make-pos 4 3)
+                                                 (make-pos 0 4) (make-pos 1 4) (make-pos 2 4) (make-pos 3 4) (make-pos 4 4))) true)
+
+(define (all-positions w h) (foldr append empty (build-2dlist w h make-pos)))
+
+;; Tests:
+(check-expect (lists-equiv? (all-positions 0 0) empty) true)
+(check-expect (lists-equiv? (all-positions 0 1) empty) true)
+(check-expect (lists-equiv? (all-positions 1 0) empty) true)
+(check-expect (lists-equiv? (all-positions 5 1) (list (make-pos 0 0) (make-pos 1 0) (make-pos 2 0) (make-pos 3 0) (make-pos 4 0))) true)
+(check-expect (lists-equiv? (all-positions 1 5) (list (make-pos 0 4) (make-pos 0 3) (make-pos 0 2) (make-pos 0 1) (make-pos 0 0))) true)
+
+;; Constants:
+(define empty-grid (list (list #\. #\. #\.)
+                         (list #\. #\. #\.)
+                         (list #\. #\. #\.)))
+
+(define test-grid (list (list #\a #\b #\c)
+                        (list #\. #\d #\.)
+                        (list #\. #\e #\.)))
+
+(define test-grid-2 (list (list #\t #\t #\t)
+                          (list #\. #\t #\.)
+                          (list #\. #\t #\.)))
+
+(define test-grid-3 (list (list #\a #\b #\.)
+                          (list #\c #\d #\.)
+                          (list #\e #\. #\.)))
+
+(define test-grid-4 (list (list #\q #\q #\.)
+                          (list #\q #\q #\.)
+                          (list #\q #\. #\.)))
+
+(define test-grid-5 (list (list #\a #\. #\.)
+                          (list #\b #\c #\d)
+                          (list #\. #\e #\.)))
+
+(define test-grid-6 (list (list #\s #\. #\.)
+                          (list #\s #\s #\s)
+                          (list #\. #\s #\.)))
+
+(define test-grid-7 (list (list #\v #\v #\.)
+                          (list #\v #\v #\.)
+                          (list #\. #\. #\.)))
+
+(define test-grid-8 (list (list #\l #\l #\l #\l #\l #\l)
+                          (list #\. #\. #\. #\. #\. #\.)
+                          (list #\. #\. #\. #\. #\. #\.)))
+
+(define test-grid-9 (list (list #\A #\. #\A)
+                          (list #\. #\A #\.)
+                          (list #\A #\. #\A)))
+
+(define test-grid-10 (list (list #\. #\A #\.)
+                           (list #\A #\A #\A)
+                           (list #\. #\A #\.)))
+
+;; (rotate-90-degrees grid) consumes a Grid and produces the
+;;    matrix representing a 90-degree roatation of that matrix
+;;    in the clockwise direction.
+;; rotate-90-degrees: Grid -> Grid
+
+;; Examples:
+(check-expect (rotate-90-degrees test-grid) (list
+                                             (list #\. #\. #\a)
+                                             (list #\e #\d #\b)
+                                             (list #\. #\. #\c)))
+(check-expect (rotate-90-degrees test-grid-3) (list
+                                               (list #\e #\c #\a)
+                                               (list #\. #\d #\b)
+                                               (list #\. #\. #\.)))
+(check-expect (rotate-90-degrees test-grid-5) (list
+                                               (list #\. #\b #\a)
+                                               (list #\e #\c #\.)
+                                               (list #\. #\d #\.)))
+
+(define (rotate-90-degrees grid)
+  (cond [(empty? grid) empty-grid] 
+        [(empty? (first grid)) empty]
+        [else (cons (reverse (map first grid))
+                    (rotate-90-degrees (map rest grid)))]))
+
+;; Tests:
+(check-expect (rotate-90-degrees empty) empty-grid)
+(check-expect (rotate-90-degrees empty-grid) empty-grid)
+(check-expect (rotate-90-degrees test-grid-7) (list
+                                               (list #\. #\v #\v)
+                                               (list #\. #\v #\v)
+                                               (list #\. #\. #\.)))
+(check-expect (rotate-90-degrees test-grid-8) (list
+                                               (list #\. #\. #\l)
+                                               (list #\. #\. #\l)
+                                               (list #\. #\. #\l)
+                                               (list #\. #\. #\l)
+                                               (list #\. #\. #\l)
+                                               (list #\. #\. #\l)))
+(check-expect (rotate-90-degrees test-grid-9) test-grid-9)
+
+;; (reflect-grid grid) consumes a Grid and produces the Grid
+;;    reflected along the y-axis.
+
+;; Examples:
+(check-expect (reflect test-grid) (list (list #\c #\b #\a)
+                                        (list #\. #\d #\.)
+                                        (list #\. #\e #\.)))
+
+(check-expect (reflect test-grid-3) (list (list #\. #\b #\a)
+                                          (list #\. #\d #\c)
+                                          (list #\. #\. #\e)))
+(define (reflect grid)
+  (map reverse grid))
+
+;; Tests:
+(check-expect (reflect test-grid-2) test-grid-2)
+(check-expect (reflect test-grid-6) (list (list #\. #\. #\s)
+                                          (list #\s #\s #\s)
+                                          (list #\. #\s #\.)))
+
+;; (all-rotated-positions grid) consumes a Grid and produces a list of Grids
+;;    containing a 0, 90, 180, and 270 degree rotation applied to the grid
+;;    with no duplicates. 
+;; all-rotated-positions: Grid -> (listof Grid)
+
+(check-expect (all-rotated-positions test-grid) (list
+                                                 (list
+                                                  (list #\a #\b #\c)
+                                                  (list #\. #\d #\.)
+                                                  (list #\. #\e #\.))
+                                                 (list
+                                                  (list #\. #\. #\a)
+                                                  (list #\e #\d #\b)
+                                                  (list #\. #\. #\c))
+                                                 (list
+                                                  (list #\. #\e #\.)
+                                                  (list #\. #\d #\.)
+                                                  (list #\c #\b #\a))
+                                                 (list
+                                                  (list #\c #\. #\.)
+                                                  (list #\b #\d #\e)
+                                                  (list #\a #\. #\.))))
+
+(define (all-rotated-positions grid)
+  (local [(define (remove-duplicates a-list)
+            (foldr
+             (lambda (x y) (cons x (filter
+                                    (lambda (z) (not (equal? x z))) y))) empty a-list))
+          (define (rotate-180-degrees grid)
+            (rotate-90-degrees (rotate-90-degrees grid)))
+          (define (rotate-270-degrees grid)
+            (rotate-90-degrees (rotate-180-degrees grid)))]      
+    (remove-duplicates (list grid
+                             (rotate-90-degrees grid)
+                             (rotate-180-degrees grid)
+                             (rotate-270-degrees grid)))))
+
+;; (all-orientations grid) consumes a Grid representing a single polyomino, and
+;;    produces a list of Grids containing all distinct rotations and reflections
+;;    of that polyomino.
+;; all-orientations: Grid -> (listof Grid)
+
+;; Examples:
+(check-expect (lists-equiv? (all-orientations test-grid-9) (list test-grid-9)) true)
+(check-expect (lists-equiv? (all-orientations test-grid-10) (list test-grid-10)) true)
+(check-expect (lists-equiv? (all-orientations empty-grid) (list empty-grid)) true)
+
+(define (all-orientations grid)
+  (cond
+    [(equal? grid (reflect grid)) (all-rotated-positions grid)]
+    [else (append (all-rotated-positions grid)
+                  (all-rotated-positions (reflect grid)))]))
+
+(check-expect (lists-equiv? (all-orientations test-grid-2) (list
+                                                            (list
+                                                             (list #\t #\t #\t)
+                                                             (list #\. #\t #\.)
+                                                             (list #\. #\t #\.))
+                                                            (list
+                                                             (list #\. #\. #\t)
+                                                             (list #\t #\t #\t)
+                                                             (list #\. #\. #\t))
+                                                            (list
+                                                             (list #\. #\t #\.)
+                                                             (list #\. #\t #\.)
+                                                             (list #\t #\t #\t))
+                                                            (list
+                                                             (list #\t #\. #\.)
+                                                             (list #\t #\t #\t)
+                                                             (list #\t #\. #\.)))) true)
+
+(check-expect (lists-equiv? (all-orientations test-grid-4) (list
+                                                            (list
+                                                             (list #\q #\q #\.)
+                                                             (list #\q #\q #\.)
+                                                             (list #\q #\. #\.))
+                                                            (list
+                                                             (list #\q #\q #\q)
+                                                             (list #\. #\q #\q)
+                                                             (list #\. #\. #\.))
+                                                            (list
+                                                             (list #\. #\. #\q)
+                                                             (list #\. #\q #\q)
+                                                             (list #\. #\q #\q))
+                                                            (list
+                                                             (list #\. #\. #\.)
+                                                             (list #\q #\q #\.)
+                                                             (list #\q #\q #\q))
+                                                            (list
+                                                             (list #\. #\q #\q)
+                                                             (list #\. #\q #\q)
+                                                             (list #\. #\. #\q))
+                                                            (list
+                                                             (list #\. #\. #\.)
+                                                             (list #\. #\q #\q)
+                                                             (list #\q #\q #\q))
+                                                            (list
+                                                             (list #\q #\. #\.)
+                                                             (list #\q #\q #\.)
+                                                             (list #\q #\q #\.))
+                                                            (list
+                                                             (list #\q #\q #\q)
+                                                             (list #\q #\q #\.)
+                                                             (list #\. #\. #\.)))) true)
+
+;; (first-empty-pos grid) consumes a Grid and produces the Pos of the first #\.
+;;    character in the grid. If the Grid has no empty positions, function
+;;    produces false.
+;; first-empty-pos: Grid -> Pos
+
+;; Examples:
+(check-expect (first-empty-pos test-grid) (make-pos 0 1))
+(check-expect (first-empty-pos test-grid-3) (make-pos 2 0))
+(check-expect (first-empty-pos test-grid-9) (make-pos 1 0))
+
+(define (first-empty-pos grid)
+  (local [(define (all-positions-of-grid grid)
+            (all-positions (length (first grid))
+                           (length grid)))
+          (define (flattened-grid grid)
+            (foldr (lambda (x base) (append x base)) empty grid))
+          (define (empty-pos? positions-of-grid flat-grid)
+            (cond [(empty? flat-grid) false]
+                  [(char=? #\. (first flat-grid)) (first positions-of-grid)]
+                  [else (empty-pos? (rest positions-of-grid) (rest flat-grid))]))]
+    (empty-pos? (all-positions-of-grid grid) (flattened-grid grid))))
+
+;; Tests:
+(check-expect (first-empty-pos empty-grid) (make-pos 0 0))
+(check-expect (first-empty-pos (list (list #\a #\b)
+                                     (list #\c #\d))) false)
+(check-expect (first-empty-pos test-grid-8) (make-pos 0 1))
+(check-expect (first-empty-pos test-grid-10) (make-pos 0 0))
+
+
+;; (add-row grid) consumes a grid and produces the same grid with
+;;    a row of 'empty' characters added the same length as rest of
+;;    the rows.
+;; add-row: Grid -> Grid
+
+(check-expect (add-row test-grid) (list
+                                   (list #\. #\. #\.)
+                                   (list #\a #\b #\c)
+                                   (list #\. #\d #\.)
+                                   (list #\. #\e #\.)))
+(check-expect (add-row (list (list #\a #\b #\c)
+                             (list #\d #\e #\f)))
+              (list (list #\. #\. #\.)
+                    (list #\a #\b #\c)
+                    (list #\d #\e #\f)))
+
+(define (add-row grid)
+  (cons (build-list (length (first grid)) (lambda (x) #\.)) grid))
+
+;;Tests:
+(check-expect (add-row (list (list #\T)))
+              (list (list #\.) (list #\T)))
+(check-expect (add-row (list (list 1 2 3 4)))
+              (list (list #\. #\. #\. #\.)
+                    (list 1 2 3 4)))
+
+;; (add-col grid) consumes a grid and produces the same grid
+;;    with an added column of 'empty' characters.
+;; add-col: Grid -> Grid
+;;Examples:
+(check-expect (add-col (list (list 1 2 3) 
+                             (list 4 5 6)
+                             (list 7 8 9)))
+              (list (list #\. 1 2 3)
+                    (list #\. 4 5 6)
+                    (list #\. 7 8 9)))
+
+(define (add-col grid)
+  (map (lambda (x) (cons #\. x)) grid))
+
+;;Tests:
+(check-expect (add-col (list (list 1 2))) (list (list #\. 1 2)))
+(check-expect (add-col (list (list 1) (list 2) (list 3)))
+              (list (list #\. 1)
+                    (list #\. 2)
+                    (list #\. 3)))
+
+;; (make-new-dimensions grid pos) consumes a grid and a Pos and prodcues
+;;    a new grid with the dimensions after the applicaiton of the Pos.
+;; make-new-dimensions: Grid Pos -> Grid
+
+;; Examples:
+
+(check-expect (shift-top test-grid (make-pos 0 0))
+              (list
+               (list #\a #\b #\c)
+               (list #\. #\d #\.)
+               (list #\. #\e #\.)))
+(check-expect (shift-top test-grid (make-pos 3 0))
+              (list
+               (list #\. #\. #\. #\a #\b #\c)
+               (list #\. #\. #\. #\. #\d #\.)
+               (list #\. #\. #\. #\. #\e #\.)))
+
+(define (shift-top grid pos)
+  (local [(define (shift-rows grid add-to pos/acc final-grid)
+            (cond [(= pos/acc 0) final-grid]
+                  [else (shift-rows (add-to grid) add-to (sub1 pos/acc) (add-to grid))]))
+          (define shift-cols (shift-rows grid add-col (pos-x pos) grid))]
+    (shift-rows shift-cols add-row (pos-y pos) shift-cols)))
+
+(check-expect (shift-top empty-grid (make-pos 1 1)) (list
+                                                     (list #\. #\. #\. #\.)
+                                                     (list #\. #\. #\. #\.)
+                                                     (list #\. #\. #\. #\.)
+                                                     (list #\. #\. #\. #\.)))
+(check-expect (shift-top (list (list #\a)) (make-pos 0 0)) (list (list #\a)))
+(check-expect (shift-top (list (list #\a)) (make-pos 2 2)) (list
+                                                            (list #\. #\. #\.)
+                                                            (list #\. #\. #\.)
+                                                            (list #\. #\. #\a)))
+
+;;(overlay base-row top-row) consumes the base grid and top grid rows
+;;    and prodcues the top row overlayed on the borrom row.
+;; overlay: (listof Char) (listof Char) -> (listof Char)
+
+;; Examples:
+(check-expect (overlay (list #\. #\. #\.) (list #\1 #\2 #\3))
+              (list #\1 #\2 #\3))
+(check-expect (overlay (list #\. #\. #\.) (list #\. #\. #\.))
+              (list #\. #\. #\.))
+
+(define (overlay base-row top-row)
+  (cond [(empty? base-row) empty]
+        [(empty? top-row)
+         (cons (first base-row) (overlay (rest base-row) empty))]
+        [(char=? (first top-row) #\.)
+         (cons (first base-row)
+               (overlay (rest base-row) (rest top-row)))]
+        [else
+         (cons (first top-row)
+               (overlay (rest base-row) (rest top-row)))]))
+
+;; Tests:
+(check-expect (overlay (list) (list)) (list))
+(check-expect (overlay (list #\. #\b #\.) (list #\a #\. #\c)) (list #\a #\b #\c))
+(check-expect (overlay (list #\w #\a #\s #\d) (list)) (list #\w #\a #\s #\d))
+
+;; (superimpose grid-base grid-top pos) consumes two grids and a Pos and produces
+;;    a new grid in which the top grid is laid over the base such that the consumed
+;;    Pos indicates the location of the upper left corner of top.
+;; superimpose: Grid Grid Pos -> Grid
+
+;; Examples:
+(check-expect (superimpose empty-grid test-grid (make-pos 0 0)) test-grid)
+(check-expect (superimpose empty-grid test-grid (make-pos 1 1)) (list (list #\. #\. #\.)
+                                                                      (list #\. #\a #\b)
+                                                                      (list #\. #\. #\d)))
+
+(define (superimpose base top pos)
+  (local [(define (final-shift base top)
+            (cond [(empty? base) empty]
+                  [(empty? top) base]
+                  [else
+                   (cons (overlay (first base) (first top))
+                         (final-shift (rest base) (rest top)))]))]
+    (final-shift base (shift-top top pos))))
+
+;; Tests:
+(check-expect (superimpose test-grid-2 test-grid-3 (make-pos 0 0)) (list (list #\a #\b #\t)
+                                                                         (list #\c #\d #\.)
+                                                                         (list #\e #\t #\.)))
+
+(check-expect (superimpose empty-grid test-grid (make-pos 4 4)) empty-grid)
+
+(check-expect (superimpose test-grid-4 test-grid-5 (make-pos 1 0)) (list (list #\q #\a #\.)
+                                                                         (list #\q #\b #\c)
+                                                                         (list #\q #\. #\e)))
+
+(check-expect (superimpose test-grid-8 test-grid-9 (make-pos 2 0)) (list (list #\l #\l #\A #\l #\A #\l)
+                                                                         (list #\. #\. #\. #\A #\. #\.)
+                                                                         (list #\. #\. #\A #\. #\A #\.)))
+
